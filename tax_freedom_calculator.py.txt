@@ -1,0 +1,84 @@
+import tkinter as tk
+from tkinter import ttk
+from PIL import Image, ImageTk
+import requests
+from io import BytesIO
+
+class TaxFreedomCalculator:
+    def __init__(self, root):
+        self.root = root
+        self.root.title("Tax Freedom Calculator")
+        self.root.geometry("400x500")
+        
+        # Download and set American flag background
+        try:
+            url = "https://upload.wikimedia.org/wikipedia/en/thumb/a/a4/Flag_of_the_United_States.svg/1200px-Flag_of_the_United_States.svg.png"
+            response = requests.get(url)
+            img_data = BytesIO(response.content)
+            img = Image.open(img_data)
+            img = img.resize((400, 500), Image.Resampling.LANCZOS)
+            self.background = ImageTk.PhotoImage(img)
+            
+            # Create canvas and set background
+            self.canvas = tk.Canvas(root, width=400, height=500)
+            self.canvas.pack(fill="both", expand=True)
+            self.canvas.create_image(0, 0, image=self.background, anchor="nw")
+        except Exception as e:
+            print(f"Error loading background: {e}")
+            self.canvas = tk.Canvas(root, width=400, height=500, bg="white")
+            self.canvas.pack(fill="both", expand=True)
+
+        # Create input frame
+        self.input_frame = ttk.Frame(self.canvas)
+        self.canvas.create_window(200, 250, window=self.input_frame)
+
+        # Input fields
+        ttk.Label(self.input_frame, text="Hours Worked Per Year:").grid(row=0, column=0, pady=5)
+        self.hours_entry = ttk.Entry(self.input_frame)
+        self.hours_entry.grid(row=0, column=1, pady=5)
+
+        ttk.Label(self.input_frame, text="Total Years Worked:").grid(row=1, column=0, pady=5)
+        self.years_entry = ttk.Entry(self.input_frame)
+        self.years_entry.grid(row=1, column=1, pady=5)
+
+        ttk.Label(self.input_frame, text="Tax Rate (%):").grid(row=2, column=0, pady=5)
+        self.tax_entry = ttk.Entry(self.input_frame)
+        self.tax_entry.grid(row=2, column=1, pady=5)
+
+        # Calculate button
+        ttk.Button(self.input_frame, text="Calculate", command=self.calculate).grid(row=3, column=0, columnspan=2, pady=10)
+
+        # Result label
+        self.result_label = ttk.Label(self.input_frame, text="")
+        self.result_label.grid(row=4, column=0, columnspan=2, pady=5)
+
+    def calculate(self):
+        try:
+            hours_per_year = float(self.hours_entry.get())
+            years_worked = float(self.years_entry.get())
+            tax_rate = float(self.tax_entry.get()) / 100  # Convert percentage to decimal
+
+            # Total hours worked in lifetime
+            total_hours = hours_per_year * years_worked
+            
+            # Hours worked "for free" due to taxes
+            free_hours = total_hours * tax_rate
+            
+            # Convert to years (assuming same hours per year)
+            free_years = free_hours / hours_per_year
+            
+            result = f"Years worked 'for free': {free_years:.2f}"
+            self.result_label.config(text=result)
+            
+        except ValueError:
+            self.result_label.config(text="Please enter valid numbers")
+        except Exception as e:
+            self.result_label.config(text=f"Error: {str(e)}")
+
+def main():
+    root = tk.Tk()
+    app = TaxFreedomCalculator(root)
+    root.mainloop()
+
+if __name__ == "__main__":
+    main()
